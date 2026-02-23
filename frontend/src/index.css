@@ -1,0 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Indie+Flower&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-green: rgb(16 73 17);
+  --color-dark-green: rgb(1 32 15);
+  --color-sea-green: rgb(91 140 90);
+  --color-jasmine: rgb(238 207 109);
+  --font-caveat: "Caveat";
+  --font-indie: "Indie Flower";
+}
