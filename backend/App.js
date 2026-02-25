@@ -2,8 +2,6 @@ import express from "express";
 import dotenv from "dotenv";
 import todoRoutes from "./routes/todo.route.js"
 import { connectDB } from "./config/db.js";
-import path from "path";
-const PORT = process.env.PORT || 5001;
 
 dotenv.config();
 
@@ -12,7 +10,7 @@ const app = express();
 app.use(express.json());
 
 app.use("/api/todos", todoRoutes);
-
+/*
 const __dirrname = path.resolve();
 
 if (process.env.NODE_ENV === "production") {
@@ -21,8 +19,8 @@ if (process.env.NODE_ENV === "production") {
         res.senndFile(path.resolve(__dirrname, "frontend", "dist", "index.html"));
     });
 }
-
-app.listen(PORT, () => {
+*/
+app.listen(5001, () => {
     connectDB();
     console.log("Server started at http://localhost:5001");
 });
