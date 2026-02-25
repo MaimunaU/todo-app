@@ -12,7 +12,7 @@ const app = express();
 
 app.use(express.json());
 app.use(cors({
-    origin: "https://todoapp-nine-psi-32.vercel.app"
+    origin: "https://todo-app-beta-seven-25.vercel.app"
 }));
 
 app.use("/api/todos", todoRoutes);
