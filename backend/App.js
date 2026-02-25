@@ -2,12 +2,16 @@ import express from "express";
 import dotenv from "dotenv";
 import todoRoutes from "./routes/todo.route.js"
 import { connectDB } from "./config/db.js";
+import path from "path";
+import cors from "cors";
+const PORT = process.env.PORT || 5001
 
 dotenv.config();
 
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
 app.use("/api/todos", todoRoutes);
 /*
@@ -20,7 +24,7 @@ if (process.env.NODE_ENV === "production") {
     });
 }
 */
-app.listen(5001, () => {
+app.listen(PORT, () => {
     connectDB();
     console.log("Server started at http://localhost:5001");
 });
