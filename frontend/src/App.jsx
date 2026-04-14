@@ -63,7 +63,7 @@ function App() {
 
   const deleteTodo = async (id) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}api/todos/${id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/todos/${id}`);
       setTodos(todos.filter((todo) => todo._id !== id));
     }
     catch (error) {
