@@ -9,6 +9,7 @@ import { IoClipboardOutline } from "react-icons/io5";
 import { FaTrash } from "react-icons/fa6";
 
 function App() {
+  console.log("API URL =", import.meta.env.VITE_API_URL); 
   const [newTodo, setNewTodo] = useState("");
   const [todos, setTodos] = useState([]);
   const [editingTodo, setEditingTodo] = useState(null);
@@ -19,7 +20,7 @@ function App() {
     if (!newTodo.trim()) return;
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/todos`, {text:newTodo});
-      setTodos([...todos, response.data]);
+      setTodos(prev => [...prev, response.data]);
       setNewTodo("");
     }
     catch (error) {
@@ -52,8 +53,9 @@ function App() {
       const response = await axios.patch(`${import.meta.env.VITE_API_URL}/api/todos/${id}`, {
         text: editedText
       });
-      setTodos(todos.map((todo) => (todo._id === id ? response.data 
-        : todo)));
+      setTodos(prev =>
+        prev.map((todo) => (todo._id === id ? response.data : todo))
+      );
       setEditingTodo(null);
     }
     catch (error) {
@@ -64,7 +66,7 @@ function App() {
   const deleteTodo = async (id) => {
     try {
       await axios.delete(`${import.meta.env.VITE_API_URL}/api/todos/${id}`);
-      setTodos(todos.filter((todo) => todo._id !== id));
+      setTodos(prev => prev.filter((todo) => todo._id !== id));
     }
     catch (error) {
       console.log("Error deleting todo:", error);
@@ -77,7 +79,9 @@ function App() {
       const response = await axios.patch(`${import.meta.env.VITE_API_URL}/api/todos/${id}`, {
         completed: !todo.completed
       });
-      setTodos(todos.map((t) => t._id === id ? response.data : t));
+      setTodos(prev =>
+        prev.map((t) => (t._id === id ? response.data : t))
+      );
     }
     catch (error) {
       console.log("Error toggling todo:", error);
@@ -106,7 +110,7 @@ function App() {
             <div></div>
           ) : (
             <div className="flex flex-col gap-4">
-              {todos.map((todo) => (
+              {Array.isArray(todos) && todos.map((todo) => (
                 <div key={todo._id}>
                   {editingTodo === todo._id ? (
                     <div className="flex items-center gap-x-3"> 
