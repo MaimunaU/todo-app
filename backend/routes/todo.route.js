@@ -34,13 +34,20 @@ router.post("/", async (req, res) => {
 router.patch("/:id", async (req, res) => {
     try {
         const todo = await Todo.findById(req.params.id);
-        if (!todo) return res.status(404).json({message: "Todo not found"});
+        if (!todo) {
+            return res.status(404).json({message: "Todo not found"});
+        }
 
         if (req.body.text != undefined) {
             todo.text = req.body.text;
         }
+        if (req.body.dueDate != undefined) {
+            todo.dueDate = req.body.dueDate;
+        }
         if (req.body.completed != undefined) {
             todo.completed = req.body.completed;
+
+            todo.completedAt = req.body.completed ? new Date() : null;
         }
 
         const updatedTodo = await todo.save();
@@ -56,7 +63,7 @@ router.delete("/:id", async (req, res) => {
     try {
         const deletedTodo = await Todo.findByIdAndDelete(req.params.id);
         if (!deletedTodo) {
-            res.json({message: "Todo deleted"});
+            return res.status(404).json({message: "Todo not found"});
         }
         
         res.json({ message: "Todo deleted" });
