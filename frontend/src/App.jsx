@@ -221,7 +221,7 @@ function App() {
               {/* content */}
               <div className="flex flex-col gap-4 overflow-y-auto">
                 {completedTodos.length === 0 ? (
-                  <p className="text-dark-green">No completed tasks</p>
+                  <p className="text-dark-green font-caveat text-xl">No completed tasks</p>
                 ) : (
                   completedTodos.map(todo => (
                     <TodoItem
