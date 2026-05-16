@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import todoRoutes from "./routes/todo.route.js"
+import habitRoutes from "./routes/habit.route.js"
 import { connectDB } from "./config/db.js";
 import cors from "cors";
 const PORT = process.env.PORT || 5001
@@ -21,6 +22,7 @@ app.use(cors({
 }));
 
 app.use("/api/todos", todoRoutes);
+app.use("/api/habits", habitRoutes);
 /*
 const __dirrname = path.resolve();
 

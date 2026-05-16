@@ -47,7 +47,7 @@ router.patch("/:id", async (req, res) => {
         if (req.body.completed != undefined) {
             todo.completed = req.body.completed;
 
-            todo.completedAt = req.body.completed ? new Date() : null;
+            todo.completedAt = req.body.completed ? new Date().toISOString().split("T")[0] : null;
         }
 
         const updatedTodo = await todo.save();
