@@ -250,7 +250,7 @@ function App() {
 
   // states for user register/login and auth
   const [token, setToken] = useState(localStorage.getItem("token"));
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const [authMode, setAuthMode] = useState("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -285,6 +285,7 @@ function App() {
       });
 
       localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
       setToken(response.data.token);
       setUser(response.data.user);
       setUsername("");
@@ -305,6 +306,7 @@ function App() {
       });
 
       localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
       setToken(response.data.token);
       setUser(response.data.user);
       setUsername("");
@@ -318,6 +320,7 @@ function App() {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setToken(null);
     setUser(null);
     setTodos([]);
@@ -514,6 +517,7 @@ function App() {
     <div className="min-h-screen w-full bg-sea-green flex flex-col items-center pt-5 gap-10">
       <div className="w-full flex justify-between items-center mt-2 px-7">
         <h1 className="text-5xl text-dark-green font-caveat font-bold">Like mate, stop procrastinating</h1>
+        <p className="text-4xl text-dark-green font-caveat underline decoration-2 decoration-jasmine">hello {user?.username}</p>
         <button onClick={() => logout()} className="border text-xl text-dark-green font-caveat font-bold shadow-xl shadow-dark-green rounded-2xl px-3 hover:bg-jasmine">Log Out</button>
       </div>
       <div className="flex w-full items-start justify-around mt-5">
