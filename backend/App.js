@@ -35,13 +35,7 @@ if (process.env.NODE_ENV === "production") {
     });
 }
 */
-
-connectDB().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server started on port ${PORT}`);
-    })
+app.listen(PORT, () => {
+    connectDB();
+    console.log("Server started at http://localhost:5001");
 });
-// app.listen(PORT, () => {
-//     connectDB();
-//     console.log("Server started at http://localhost:5001");
-// });
