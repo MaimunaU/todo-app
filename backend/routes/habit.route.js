@@ -1,12 +1,13 @@
 import express from "express";
 import Habit from "../models/habit.model.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
 // Get all habits
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
     try {
-        const habits = await Habit.find();
+        const habits = await Habit.find({user: req.user.id});
         res.json(habits);
     }
     catch (error) {
@@ -15,10 +16,11 @@ router.get("/", async (req, res) => {
 });
 
 // Add a habit
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
     const habit = new Habit({
         name: req.body.name,
-        daysOfWeek: req.body.daysOfWeek
+        daysOfWeek: req.body.daysOfWeek,
+        user: req.user.id
     })
     try {
         const newHabit = await habit.save();
@@ -30,9 +32,9 @@ router.post("/", async (req, res) => {
 });
 
 // Update name and days
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", auth, async (req, res) => {
     try {
-        const habit = await Habit.findById(req.params.id);
+        const habit = await Habit.findOne({_id: req.params.id, user: req.user.id});
         if (!habit) {
             return res.status(404).json({message: "Habit not found"});
         }
@@ -53,18 +55,18 @@ router.patch("/:id", async (req, res) => {
     }
 });
 
-router.patch("/:id/toggle", async (req, res) => {
+router.patch("/:id/toggle", auth, async (req, res) => {
     try {
-        const habit = await Habit.findById(req.params.id);
+        const habit = await Habit.findOne({_id: req.params.id, user: req.user.id});
 
         if (!habit) {
             return res.status(404).json({ message: "Habit not found" });
         }
 
-        const date = new Date(req.body.date).toISOString().split("T")[0];
-        if (!date) {
+        if (!req.body.date) {
             return res.status(400).json({ message: "Date is required" });
         }
+        const date = req.body.date;
 
         const existingLogIdx = habit.logs.findIndex(log => log.date === date);
 
@@ -85,9 +87,9 @@ router.patch("/:id/toggle", async (req, res) => {
 });
 
 // Delete a habit
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
     try {
-        const deletedHabit = await Habit.findByIdAndDelete(req.params.id);
+        const deletedHabit = await Habit.findOneAndDelete({_id: req.params.id, user: req.user.id});
         if (!deletedHabit) {
             return res.status(404).json({message: "Habit not found"});
         }

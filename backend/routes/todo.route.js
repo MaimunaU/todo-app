@@ -2,13 +2,14 @@
 
 import express from "express";
 import Todo from "../models/todo.model.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
 // Get all todos
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
     try {
-        const todos = await Todo.find();
+        const todos = await Todo.find({user: req.user.id});
         res.json(todos);
     }
     catch (error) {
@@ -17,9 +18,10 @@ router.get("/", async (req, res) => {
 });
 
 // Add a todo
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
     const todo = new Todo({
-        text: req.body.text
+        text: req.body.text,
+        user: req.user.id
     })
     try {
         const newTodo = await todo.save();
@@ -31,9 +33,9 @@ router.post("/", async (req, res) => {
 });
 
 // Update text and/or mark complete
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", auth, async (req, res) => {
     try {
-        const todo = await Todo.findById(req.params.id);
+        const todo = await Todo.findOne({_id: req.params.id, user: req.user.id});
         if (!todo) {
             return res.status(404).json({message: "Todo not found"});
         }
@@ -47,7 +49,7 @@ router.patch("/:id", async (req, res) => {
         if (req.body.completed != undefined) {
             todo.completed = req.body.completed;
 
-            todo.completedAt = req.body.completed ? new Date().toISOString().split("T")[0] : null;
+            todo.completedAt = req.body.completed ? req.body.completedAt : null;
         }
 
         const updatedTodo = await todo.save();
@@ -59,9 +61,9 @@ router.patch("/:id", async (req, res) => {
 });
 
 // Delete a todo
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
     try {
-        const deletedTodo = await Todo.findByIdAndDelete(req.params.id);
+        const deletedTodo = await Todo.findOneAndDelete({_id: req.params.id, user: req.user.id});
         if (!deletedTodo) {
             return res.status(404).json({message: "Todo not found"});
         }

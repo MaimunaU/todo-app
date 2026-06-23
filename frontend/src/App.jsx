@@ -35,9 +35,52 @@ const getCurrentWeekDays = () => {
     const date = new Date(startOfWeek);
     date.setDate(startOfWeek.getDate() + idx);
 
-    return {...day, date: date.toISOString().split("T")[0],};
+    return {...day, date: date.toLocaleDateString("en-CA")};
   });
 };
+
+function UserAuth({
+  authMode,
+  setAuthMode,
+  username,
+  setUsername,
+  password,
+  setPassword,
+  authError,
+  login, 
+  register
+}) {
+  return (
+    <div className="min-h-screen w-full bg-sea-green flex flex-col items-center pt-5 gap-10">
+      <h1 className="text-5xl text-dark-green font-caveat font-bold mb-7">Like mate, stop procrastinating</h1>
+      <form onSubmit={authMode === "login" ? login : register} 
+        className="w-6/10 bg-jasmine font-caveat shadow-sm shadow-dark-green border border-sea-green p-2 rounded-lg flex flex-col">
+          <h1 className="text-5xl text-dark-green font-caveat font-bold m-2">{authMode === "login" ? "Log In" : "Create account"}</h1>
+          {authError && (<p className="text-red-500 font-caveat text-xl">{authError}</p>)}
+
+          <input className=" w-7/10 flex-1 p-1.5 border border-sea-green 
+            rounded-md outline-none shadow-sm shadow-dark-green focus:ring-2 focus:ring-dark-green font-caveat text-xl placeholder-sea-green text-dark-green m-2" 
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Username" required/>
+
+          <input className=" w-7/10 flex-1 p-1.5 border border-sea-green 
+            rounded-md outline-none shadow-sm shadow-dark-green focus:ring-2 focus:ring-dark-green font-caveat text-xl placeholder-sea-green text-dark-green m-2" 
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password" required/>
+
+          <div className="flex justify-between">
+            <button type="submit" className="bg-dark-green shadow-lg shadow-dark-green hover:bg-sea-green font-caveat text-jasmine rounded-lg px-5 py-2 m-2">{authMode === "login" ? "Log In" : "Sign up"}</button>
+
+            <button type="button" onClick={() => {setAuthMode(authMode === "login" ? "register" : "login");}} className="bg-dark-green shadow-lg shadow-dark-green hover:bg-sea-green font-caveat text-jasmine rounded-lg px-5 py-2 m-2">{authMode === "login" ? "Need an account? Sign up" : "Already have an account? Log in"}</button>
+          </div>
+        </form>
+    </div>
+  );
+}
 
 function TodoItem({
   todo,
@@ -142,7 +185,7 @@ function HabitItem({
   saveEditedHabit,
   deleteHabit,
   currentWeekDays,
-  toggleHabitDate,
+  toggleHabitDate
 }) {
   const isEditing = editingHabit === habit._id;
 
@@ -205,6 +248,14 @@ function HabitItem({
 function App() {
   console.log("API URL =", import.meta.env.VITE_API_URL); 
 
+  // states for user register/login and auth
+  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [user, setUser] = useState(null);
+  const [authMode, setAuthMode] = useState("login");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+
   // states for todo list 
   const [newTodo, setNewTodo] = useState("");
   const [todos, setTodos] = useState([]);
@@ -223,13 +274,66 @@ function App() {
   const [showSummary, setShowSummary] = useState(false);
   const currentWeekDays = getCurrentWeekDays();
 
+  // user account and auth functions
+  const login = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/login`, {
+        username,
+        password
+      });
+
+      localStorage.setItem("token", response.data.token);
+      setToken(response.data.token);
+      setUser(response.data.user);
+      setUsername("");
+      setPassword("");
+      setAuthError("");
+    }
+    catch (error) {
+      setAuthError(error.response?.data?.message || "Login failed");
+    }
+  };
+
+  const register = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/register`, {
+        username,
+        password
+      });
+
+      localStorage.setItem("token", response.data.token);
+      setToken(response.data.token);
+      setUser(response.data.user);
+      setUsername("");
+      setPassword("");
+      setAuthError("");
+    }
+    catch (error) {
+      setAuthError(error.response?.data?.message || "Registration failed");
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setToken(null);
+    setUser(null);
+    setTodos([]);
+    setHabits([]);
+  };
+
+  const authConfig = {
+    headers: {Authorization: `Bearer ${token}`}
+  };
 
   // todo list functions
   const addTodo = async (e) => {
     e.preventDefault();
     if (!newTodo.trim()) return;
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/todos`, {text:newTodo});
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/todos`, {text:newTodo}, authConfig);
       setTodos(prev => [...prev, response.data]);
       setNewTodo("");
     }
@@ -240,7 +344,7 @@ function App() {
 
   const fetchTodos = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/todos`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/todos`, authConfig);
       // console.log("API response:", response.data);
       setTodos(response.data);
     }
@@ -258,7 +362,7 @@ function App() {
     try {
       const response = await axios.patch(`${import.meta.env.VITE_API_URL}/api/todos/${id}`, {
         text: editedText
-      });
+      }, authConfig);
       setTodos(prev =>
         prev.map((todo) => (todo._id === id ? response.data : todo))
       );
@@ -271,7 +375,7 @@ function App() {
 
   const deleteTodo = async (id) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/todos/${id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/todos/${id}`, authConfig);
       setTodos(prev => prev.filter((todo) => todo._id !== id));
     }
     catch (error) {
@@ -282,9 +386,12 @@ function App() {
   const toggleTodo = async (id) => {
     try {
       const todo = todos.find((t) => t._id === id);
+      const today = new Date().toLocaleDateString("en-CA");
+
       const response = await axios.patch(`${import.meta.env.VITE_API_URL}/api/todos/${id}`, {
-        completed: !todo.completed
-      });
+        completed: !todo.completed,
+        completedAt: !todo.completed ? today : null
+      }, authConfig);
       setTodos(prev =>
         prev.map((t) => (t._id === id ? response.data : t))
       );
@@ -297,7 +404,7 @@ function App() {
   const updateDueDate = async (id, date) => {
     try {
       const response = await axios.patch(`${import.meta.env.VITE_API_URL}/api/todos/${id}`,
-        { dueDate: date }
+        { dueDate: date }, authConfig
       );
   
       setTodos((prev) =>
@@ -316,7 +423,7 @@ function App() {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/habits`, {
         name:newHabit,
         daysOfWeek: [0, 1, 2, 3, 4, 5, 6]
-      });
+      }, authConfig);
       setHabits(prev => [...prev, response.data]);
       setNewHabit("");
     }
@@ -327,7 +434,7 @@ function App() {
 
   const fetchHabit = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/habits`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/habits`, authConfig);
       // console.log("API response:", response.data);
       setHabits(response.data);
     }
@@ -337,9 +444,11 @@ function App() {
   };
 
   useEffect(() => {
+    if (!token) return;
+
     fetchTodos();
     fetchHabit();
-  }, []);
+  }, [token]);
 
   const startEditingHabit = (habit) => {
     setEditingHabit(habit._id);
@@ -352,7 +461,7 @@ function App() {
       const response = await axios.patch(`${import.meta.env.VITE_API_URL}/api/habits/${id}`, {
         name: editedHabitName,
         daysOfWeek: editedHabitDays
-      });
+      }, authConfig);
       setHabits(prev =>
         prev.map((habit) => (habit._id === id ? response.data : habit))
       );
@@ -365,7 +474,7 @@ function App() {
 
   const deleteHabit = async (id) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/habits/${id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/habits/${id}`, authConfig);
       setHabits(prev => prev.filter((habit) => habit._id !== id));
     }
     catch (error) {
@@ -375,7 +484,7 @@ function App() {
 
   const toggleHabitDate = async (id, date) => {
     try {
-      const response = await axios.patch(`${import.meta.env.VITE_API_URL}/api/habits/${id}/toggle`, {date});
+      const response = await axios.patch(`${import.meta.env.VITE_API_URL}/api/habits/${id}/toggle`, {date}, authConfig);
       setHabits(prev =>
         prev.map((habit) => (habit._id === id ? response.data : habit))
       );
@@ -385,16 +494,35 @@ function App() {
     }
   };
 
+  if (!token) {
+    return (
+      <UserAuth
+        authMode={authMode}
+        setAuthMode={setAuthMode}
+        username={username}
+        setUsername={setUsername}
+        password={password}
+        setPassword={setPassword}
+        authError={authError}
+        login={login}
+        register={register}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen w-full bg-sea-green flex flex-col items-center pt-5 gap-10">
-      <h1 className="text-5xl text-dark-green font-caveat font-bold mb-7">Like mate, stop procrastinating</h1>
-      <div className="flex w-full items-start justify-around">
+      <div className="w-full flex justify-between items-center mt-2 px-7">
+        <h1 className="text-5xl text-dark-green font-caveat font-bold">Like mate, stop procrastinating</h1>
+        <button onClick={() => logout()} className="border text-xl text-dark-green font-caveat font-bold shadow-xl shadow-dark-green rounded-2xl px-3 hover:bg-jasmine">Log Out</button>
+      </div>
+      <div className="flex w-full items-start justify-around mt-5">
         {/* Left side - enter today's tasks */}
         <div className="bg-jasmine rounded-2xl shadow-xl shadow-dark-green w-4/10 p-8 m-7">
           <div className="flex justify-between items-center mb-7">
             <h1 className="text-5xl text-dark-green font-caveat font-bold">Tasks</h1>
             <button onClick={() => setShowCompleted(prev => !prev)} 
-              className=" border text-xl text-dark-green font-caveat font-bold shadow-xl shadow-dark-green bg-jasmine rounded-2xl pl-2 pr-3 max-h-5/10">Completed</button>
+              className=" border text-xl text-dark-green font-caveat font-bold shadow-xl shadow-dark-green bg-jasmine rounded-2xl pl-2 pr-3 max-h-5/10 hover:bg-sea-green">Completed</button>
             {showCompleted && (
               <div onClick={() => setShowCompleted(false)} className="fixed inset-0 bg-dark-green/30 flex items-center justify-center z-50">
                 {/* modal */}
@@ -432,8 +560,7 @@ function App() {
               placeholder="Enter task :)"
               required 
             />
-            <button type="submit" className="bg-sea-green hover:bg-yellow-500 font-caveat text-dark-green 
-              text-xl px-4 py-2 rounded-md cursor-pointer">Add</button>
+            <button type="submit" className="bg-dark-green hover:bg-sea-green font-caveat text-jasmine text-xl px-4 py-2 rounded-md cursor-pointer">Add</button>
           </form>
           <div>
             {todos.length === 0 ? (
@@ -463,7 +590,7 @@ function App() {
           <div className="flex justify-between items-center mb-7">
             <h1 className="text-5xl text-dark-green font-caveat font-bold">Habits</h1>
             <button onClick={() => setShowSummary(prev => !prev)} 
-              className=" border text-xl text-dark-green font-caveat font-bold shadow-xl shadow-dark-green bg-jasmine rounded-2xl pl-2 pr-3 max-h-5/10">Summary</button>
+              className=" border text-xl text-dark-green font-caveat font-bold shadow-xl shadow-dark-green bg-jasmine rounded-2xl pl-2 pr-3 max-h-5/10 hover:bg-sea-green">Summary</button>
             {showSummary && (
               <div onClick={() => setShowSummary(false)} className="fixed inset-0 bg-dark-green/30 flex items-center justify-center z-50">
                 {/* modal */}
@@ -476,6 +603,7 @@ function App() {
                   {/* content */}
                   <div className="flex flex-col gap-4 overflow-y-auto">
                     <p className="text-dark-green font-caveat text-xl">Summary content</p>
+                    {/* current streak, longest streak, total # of days completed (since first day habit was added?), can show the month with the completed days filled and state the habit's completion rate for each month, most missed habit, most/least productive day in terms of habit completion*/}
                   </div>
                 </div>
               </div>
@@ -490,8 +618,7 @@ function App() {
               placeholder="Enter habit :)"
               required 
             />
-            <button type="submit" className="bg-sea-green hover:bg-yellow-500 font-caveat text-dark-green 
-              text-xl px-4 py-2 rounded-md cursor-pointer">Add</button>
+            <button type="submit" className="bg-dark-green hover:bg-sea-green font-caveat text-jasmine text-xl px-4 py-2 rounded-md cursor-pointer">Add</button>
           </form>
           <div className="grid grid-cols-[minmax(0,1fr)_repeat(7,2rem)_2rem_2rem] items-center gap-2">
             <span></span>
